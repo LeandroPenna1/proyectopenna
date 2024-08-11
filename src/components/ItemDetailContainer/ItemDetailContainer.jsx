@@ -1,28 +1,31 @@
 import { useEffect, useState } from "react";
-import { getProductsById } from "../../asyncMock";
+import "./ItemDetailContainer.css";
 import { useParams } from "react-router-dom";
 import ItemDetail from "../ItemDetail/ItemDetail";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../services/firebase";
 function ItemDetailContainer() {
-    const [product, setProduct] = useState();
-    const {id} = useParams()
-    useEffect (() => {
-        getProductsById(parseInt(id))
-        .then((res) =>{
-            setProduct(res)
+    const [product, setProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const { productId } = useParams();
+    useEffect(() => {
+        getDoc(doc(db, "products", productId))
+          .then((querySnapshot) => {
+            const product = {id: querySnapshot.id, ...querySnapshot.data()}
+            setProduct(product); 
         })
-        .catch((err) =>console.log(err))
-    }, [id])
+            .catch((err) => console.log(err))
+            .finally(() => {
+                setLoading(false)
+            })   }, [productId])
     return (
-        
-        <div>
-         <ItemDetail {...product}></ItemDetail>
-            <div className="d-grid gap-2 d-md-block">
-                <button className="btn btn-primary" type="button">
-                    Agregar al carrito
-                </button>
-            </div> 
+
+        <div className="itemDetailContainer">
+           {loading? <h3>Cargando producto...</h3> : <ItemDetail {...product}/>}
         </div>
     )
 }
 
 export default ItemDetailContainer;
+
+
